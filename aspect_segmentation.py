@@ -1,8 +1,11 @@
+import sys
 from preprocess import *
 import numpy as np
 from nltk.sentiment.vader import SentimentIntensityAnalyzer as SIA
 
 #goal: map sentences to corresponding aspect.
+label_text = ['Value', 'Rooms', 'Location', 'Cleanliness', 'Check in/Front Desk', 'Service', 'Business Service']
+REVIEW_SIZE=int(sys.argv[1])
 
 def get_aspect_terms(file, vocab_dict):
 	aspect_terms = []
@@ -50,12 +53,45 @@ def chi_sq(a,b,c,d):
 	return nc * (c1*c4 - c2*c3) * (c1*c4 - c2*c3)/((c1+c3) * (c2+c4) * (c1+c2) * (c3+c4))
 
 ## returns a K*V matrix
-def chi_sq_mat(K, aspect_words, aspect_sent, num_words, vocab, sent):
+def chi_sq_mat(K, aspect_words, aspect_sent, num_words, V, sent):
 	asp_rank = np.zeros(aspect_words.shape)
 	for i in range(K):
-		for j in range(len(vocab)):
+		for j in range(V):
 			asp_rank[i][j] = chi_sq(aspect_words[i][j], num_words[j], aspect_sent[i], len(sent))
 	return asp_rank
+
+def assign_sent_to_aspects(review_sent, aspect_terms, vocab_dict, K, V):
+	review_labels = []
+	num_words = np.zeros(V)
+	aspect_words = np.zeros((K,V))
+	aspect_sent = np.zeros(K)
+
+	for review in review_sent:
+		# each scentence belongs to which label
+		labels = []
+		for sent in review:
+			count = np.zeros(K)
+			i = 0
+			for a in aspect_terms:
+				for w in sent:
+					if w in vocab_dict:
+						num_words[vocab_dict[w]] += 1
+						if w in a:
+							count[i] += 1
+				i = i + 1
+			if max(count) > 0:
+				la = np.where(np.max(count) == count)[0].tolist()
+				labels.append(la)
+				print("assigned sent to label", la, sent, extract_list(la, label_text))
+				for i in la:
+					aspect_sent[i] += 1
+					for w in sent:
+						if w in vocab_dict:
+							aspect_words[i][vocab_dict[w]] += 1
+			else:
+				labels.append([])
+		review_labels.append(labels)
+	return num_words, aspect_words, aspect_sent, review_labels
 
 def aspect_segmentaion():
 
@@ -64,11 +100,11 @@ def aspect_segmentaion():
 	file="TripAdvisor/Texts/hotel_72572_parsed.txt"
 	#file="Review_Texts/hotel_218524.dat"
 	#reviews, all_ratings = load_file(file)
-	reviews = load_path("TripAdvisor/Texts")
+	reviews = load_path("TripAdvisor/Texts", REVIEW_SIZE)
 
 	#selection threshold
 	p = 5
-	#p = 2
+	p = 2
 	#Iterations 
 	I = 10
 	I = 1
@@ -79,51 +115,23 @@ def aspect_segmentaion():
 
 	#Aspect Keywords
 	aspect_file = "aspect_keywords.csv"
-	aspect_file = "init_aspect_keywords.csv"
+	#aspect_file = "init_aspect_keywords.csv"
 	aspect_terms = get_aspect_terms(aspect_file, vocab_dict)
 
-	label_text = ['Value', 'Rooms', 'Location', 'Cleanliness', 'Check in/Front Desk', 'Service', 'Business Service']
 	print("initial aspect_terms:", aspect_terms)
 
 	#ALGORITHM
-	review_labels = []
 	K = len(aspect_terms)
 	V = len(vocab)
 	print("vocab size:", V)
-	aspect_words = np.zeros((K,V))
-	aspect_sent = np.zeros(K)
-	num_words = np.zeros(V)
+	print("review scent:", len(review_sent))
 
 	for iter in range(I):
-		for review in review_sent:
-			# each scentence belongs to which label
-			labels = []
-			for sent in review:
-				count = np.zeros(K)
-				i = 0
-				for a in aspect_terms:
-					for w in sent:
-						if w in vocab_dict:
-							num_words[vocab_dict[w]] += 1
-							if w in a:
-								count[i] += 1
-					i = i + 1
-				if max(count) > 0:
-					la = np.where(np.max(count) == count)[0].tolist()
-					labels.append(la)
-					print("assign sent to label", la, sent)
-					for i in la:
-						aspect_sent[i] += 1
-						for w in sent:
-							if w in vocab_dict:
-								aspect_words[i][vocab_dict[w]] += 1
-				else:
-					labels.append([])
-			review_labels.append(labels)
+		num_words, aspect_words, aspect_sent, review_labels = assign_sent_to_aspects(review_sent, aspect_terms, vocab_dict, K, V)
 
 		## all sentences assigned to labels/aspects
 		## now we should update chi square, add terms to aspects
-		aspect_w_rank = chi_sq_mat(K, aspect_words, aspect_sent, num_words, vocab, only_sent)
+		aspect_w_rank = chi_sq_mat(K, aspect_words, aspect_sent, num_words, V, only_sent)
 		print("aspect with rank:", aspect_w_rank)
 		new_labels = []
 		new_terms = []
@@ -139,6 +147,8 @@ def aspect_segmentaion():
 					if (not k in aspect_terms[i]):
 						aspect_terms[i].append(k)
 		#print("new_labels", new_labels)
+		print("total_sent(iter %d):" % iter, len(only_sent))
+		print("aspect_sent(iter %d):" % iter, aspect_sent)
 		print("aspect_terms (iter %d):" % iter, aspect_terms)
 		# sys.exit()
 

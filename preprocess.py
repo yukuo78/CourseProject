@@ -72,13 +72,13 @@ def create_vocab(sent):
 	vocab_dict = dict(zip(vocab, range(len(vocab))))
 	return vocab, vocab_dict
 
-def load_path(path):
+def load_path(path, max_review=5000):
 	total_reviews = []
 	path = "TripAdvisor/Texts"
 	for f in os.listdir(path):
 		reviews, ratings = load_file(os.path.join(path, f))
 		total_reviews += reviews
-		if (len(total_reviews) > 5000):
+		if (len(total_reviews) >= max_review):
 			break
 	return total_reviews
 
