@@ -25,6 +25,7 @@ def load_file(file):
 	return reviews , ratings
 	#print(len(reviews), reviews[1])
 
+### split each review to sentences, with term preprocessing
 def parse_to_sentence(reviews):
 	review_processed = []
 	actual = []
@@ -59,6 +60,7 @@ def parse_to_sentence(reviews):
 # sent = parse_to_sentence(reviews)
 # print len(sent), sent[2]
 
+### scan all sentences, create the vocabulary with terms occrence bigger than 5
 def create_vocab(sent):
 	words = []
 	for s in sent:
