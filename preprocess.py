@@ -5,6 +5,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem.porter import *
 import re
+import os
 stemmer = PorterStemmer()
 
 #load all review texts
@@ -22,7 +23,7 @@ def load_file(file):
 			ratings.append(int(r[1]))
 	f.close()
 	return reviews , ratings
-    #print(len(reviews), reviews[1])
+	#print(len(reviews), reviews[1])
 
 def parse_to_sentence(reviews):
 	review_processed = []
@@ -36,7 +37,7 @@ def parse_to_sentence(reviews):
 			#words to lower case
 			s = s.lower()
 			#remove punctuations and stopwords
-			replace_punctuation = string.maketrans(string.punctuation, ' '*len(string.punctuation))
+			replace_punctuation = str.maketrans(string.punctuation, ' '*len(string.punctuation))
 			s = s.translate(replace_punctuation)
 			stop_words	 = list(stopwords.words('english'))
 			additional_stopwords = ["'s","...","'ve","``","''","'m",'--',"'ll","'d"]
@@ -50,6 +51,7 @@ def parse_to_sentence(reviews):
 			stemmed = [stemmer.stem(w) for w in s]
 			if len(stemmed)>0:
 				sent.append(stemmed)
+			#print(len(only_sent), stemmed)
 		review_processed.append(sent)
 		only_sent.extend(sent)
 	return review_processed, actual, only_sent
@@ -70,6 +72,24 @@ def create_vocab(sent):
 	vocab_dict = dict(zip(vocab, range(len(vocab))))
 	return vocab, vocab_dict
 
+def load_path(path):
+	total_reviews = []
+	path = "TripAdvisor/Texts"
+	for f in os.listdir(path):
+		reviews, ratings = load_file(os.path.join(path, f))
+		total_reviews += reviews
+		if (len(total_reviews) > 5000):
+			break
+	return total_reviews
+
 if __name__ == '__main__':
-    import sys
-    print(load_file(sys.argv[1]))
+	import sys
+	import os
+	total_reviews = load_path(path)
+	print(len(total_reviews), total_reviews[2])
+	#sys.exit(1)
+	processed_reviews, actual, only_sent = parse_to_sentence(total_reviews)
+	print("total reviews:", len(processed_reviews))
+	print("total scentences:", len(only_sent))
+	vocab, vocab_dict = create_vocab(only_sent)
+	print("total terms:", len(vocab))
