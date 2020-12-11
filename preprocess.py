@@ -76,13 +76,15 @@ def create_vocab(sent):
 
 def load_path(path, max_review=5000):
 	total_reviews = []
+	total_labels = []
 	path = "TripAdvisor/Texts"
 	for f in os.listdir(path):
 		reviews, ratings = load_file(os.path.join(path, f))
 		total_reviews += reviews
+		total_labels += ratings
 		if (len(total_reviews) >= max_review):
 			break
-	return total_reviews
+	return total_reviews, total_labels
 
 if __name__ == '__main__':
 	import sys
