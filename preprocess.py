@@ -5,11 +5,13 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem.porter import *
 import re
+import sys
 import os
 stemmer = PorterStemmer()
 
 #load all review texts
 def load_file(file):
+	#print("Loading from file:", file)
 	reviews = []
 	ratings = []
 	f = open(file,'r')
@@ -74,10 +76,10 @@ def create_vocab(sent):
 	vocab_dict = dict(zip(vocab, range(len(vocab))))
 	return vocab, vocab_dict
 
-def load_path(path, max_review=5000):
+## load review data from files
+def load_path(path="TripAdvisor/Texts", max_review=5000):
 	total_reviews = []
 	total_labels = []
-	path = "TripAdvisor/Texts"
 	for f in os.listdir(path):
 		reviews, ratings = load_file(os.path.join(path, f))
 		total_reviews += reviews
@@ -86,14 +88,22 @@ def load_path(path, max_review=5000):
 			break
 	return total_reviews, total_labels
 
-if __name__ == '__main__':
-	import sys
-	import os
-	total_reviews = load_path(path)
-	print(len(total_reviews), total_reviews[2])
-	#sys.exit(1)
+def preprocess():
+	print("***1. Load reviews from file...")
+	total_reviews, labels = load_path()
+	print("	total reviews:", len(total_reviews))
+
+	print("***2. Parse reviews into sentences...")
 	processed_reviews, actual, only_sent = parse_to_sentence(total_reviews)
-	print("total reviews:", len(processed_reviews))
-	print("total scentences:", len(only_sent))
+	print("	total processed reviews:", len(total_reviews))
+	print("	total scentences:", len(only_sent))
+
+	print("***3. Create vocabulary...")
 	vocab, vocab_dict = create_vocab(only_sent)
-	print("total terms:", len(vocab))
+	print("	total terms:", len(vocab))
+
+	#print(len(total_reviews), total_reviews[2])
+
+if __name__ == '__main__':
+	preprocess()
+

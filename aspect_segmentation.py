@@ -30,6 +30,7 @@ def get_aspect_terms(file, vocab_dict):
 
 def chi_sq(aspect, term, a,b,c,d):
 	"""
+	The procedure to calculate Chi square.
 	a: count of word[j] in aspect[i]
 	b: count of word[j]
 	c: count of scentences of aspect[i]
@@ -55,7 +56,7 @@ def chi_sq(aspect, term, a,b,c,d):
 	#print("chi for %s %s" % (aspect, term), c1, c2, c3, c4, nc, sumC, chi)
 	return chi
 
-## returns a K*V matrix
+## compute chi square as a martrix. Returns a K*V matrix
 def chi_sq_mat(K, V, aspect_words, aspect_sent, num_words, only_sent):
 	asp_rank = np.zeros(aspect_words.shape)
 	for i in range(K):
@@ -63,7 +64,7 @@ def chi_sq_mat(K, V, aspect_words, aspect_sent, num_words, only_sent):
 			asp_rank[i][j] = chi_sq(label_text[i], vocab[j], aspect_words[i][j], num_words[j], aspect_sent[i], len(only_sent))
 	return asp_rank
 
-## only review_lables is important for LRR
+## distribute sentences into aspect according to term mactch count.
 def assign_sent_to_aspects(review_sent, aspect_terms, vocab_dict, K, V):
 	review_labels = []
 	num_words = np.zeros(V)
