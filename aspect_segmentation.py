@@ -114,8 +114,8 @@ def aspect_segmentaion():
 	reviews, labels = load_path("TripAdvisor/Texts", REVIEW_SIZE)
 
 	#selection threshold
-	p = 5
-	#p = 2
+	#p = 5
+	p = 3
 	#Iterations 
 	I = 10
 	#I = 1
@@ -150,7 +150,7 @@ def aspect_segmentaion():
 ## now we should update chi square, add terms to aspects
 def reassign_aspect_terms(K, V, p, aspect_words, aspect_sent, num_words, only_sent, vocab_dict, aspect_terms, iter):
 	aspect_w_rank = chi_sq_mat(K, V, aspect_words, aspect_sent, num_words, only_sent)
-	print("aspect with rank:", aspect_w_rank)
+	#print("aspect with rank:", aspect_w_rank)
 
 	new_labels = []
 	new_terms = []
@@ -160,7 +160,7 @@ def reassign_aspect_terms(K, V, p, aspect_words, aspect_sent, num_words, only_se
 		terms = []
 		new_labels.append(x)
 		new_terms.append(terms)
-		print("add new terms to label %s:" % label_text[i] , x, extract_list(x, na))
+		#print("add new terms to label %s:" % label_text[i] , x, extract_list(x, na))
 		for k,v in vocab_dict.items():
 			if vocab_dict[k] in x:
 				if (not k in aspect_terms[i]):
@@ -169,7 +169,7 @@ def reassign_aspect_terms(K, V, p, aspect_words, aspect_sent, num_words, only_se
 					changed = True
 	#print("new_labels", new_labels)
 	print("total_sent(iter %d):" % iter, len(only_sent))
-	print("aspect_sent(iter %d):" % iter, aspect_sent)
+	print("aspect_sent(iter %d):" % iter, list(zip(label_text, aspect_sent)))
 	print("aspect_terms (iter %d):" % iter)
 	for i, asp_term in enumerate(aspect_terms):
 		print(label_text[i], asp_term)
