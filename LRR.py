@@ -3,29 +3,57 @@ from aspect_segmentation import Data
 
 label_text = ['Value', 'Rooms', 'Location', 'Cleanliness', 'Check in/Front Desk', 'Service', 'Business Service']
 
-def gradient_precision(x_start, precision, learning_rate):
+## alpha is variable, of shape (K)
+## other are considered constant
+## output is shape (K)
+def f_x_derivative(lrr, alpha, rd, d):
+	deltaR = np.dot(alpha , lrr.S[d]) - rd
+	a1 = - deltaR * lrr.S[d]/lrr.Sigma
+	a2 = - np.matmul(np.linalg.inv(lrr.Omega) , (alpha - lrr.Mu))
+	return a1 + a2
+	 
+def f_x(lrr, alpha, rd, d):
+	deltaR = np.dot(alpha , lrr.S[d]) - rd
+	a1 = - deltaR * deltaR / (2 * lrr.Sigma)
+
+	b2 = np.matmul(np.linalg.inv(lrr.Omega) , (alpha - lrr.Mu))
+	a2 = - np.matmul( (alpha - lrr.Mu).T, b2)
+	return a1 + a2
+
+def gradient_precision(x_start, max_iter, precision, learning_rate, f_x, dfunc):
 
 	# These x and y value lists will be used later for visualisation.
 	x_grad = [x_start]
 	y_grad = [f_x(x_start)]
 
-	while True:
+	iter = 0
+	while iter < max_iter:
 
 		# Get the Slope value from the derivative function for x_start
 		# Since we need negative descent (towards minimum), we use '-' of derivative
-		x_start_derivative = - f_x_derivative(x_start)
+		x_start_derivative = - dfunc(x_start)
+
+		print("x_start:", x_start)
+		print("y_grad: ", f_x(x_start))
+		print("x_start_derivative: ", x_start_derivative)
 
 		# calculate x_start by adding the previous value to 
 		# the product of the derivative and the learning rate calculated above.
-		x_start += (learning_rate * x_start_derivative)
+		x_start = x_start + (learning_rate * x_start_derivative)
+		print("next x_start:", x_start)
 
 		x_grad.append(x_start)
 		y_grad.append(f_x(x_start))
 		# Break out of the loop as soon as we meet precision.
-		if abs(x_grad[len(x_grad)-1] - x_grad[len(x_grad)-2]) <= precision:
+		#if abs(x_grad[len(x_grad)-1] - x_grad[len(x_grad)-2]) <= precision:
+		delta = np.sum(x_grad[len(x_grad)-1] - x_grad[len(x_grad)-2])
+		print(delta, x_grad[len(x_grad)-1] , x_grad[len(x_grad)-2])
+		print("total x_grad", len(x_grad), x_grad)
+		if delta <= precision:
 			break
+		iter += 1
 
-	print ("Local minimum occurs at: {:.2f}".format(x_start))
+	print ("Local minimum occurs at: ", (x_start))
 	print ("Number of steps taken: ",len(x_grad)-1)
 	#plot_gradient(x, f_x(x) ,x_grad, y_grad)
 
@@ -86,7 +114,14 @@ class LRR:
 		for d in range(this.D):
 			for i in range(7):
 				S[d][i] = np.dot(lrr.Beta[i], W[d][i])
-			print("S[%d]" % d, S[d])
+			#print("S[%d]" % d, S[d])
+		this.S = S
+
+		d = 0
+		rd = this.data.labels[d]
+		alpha0 = np.zeros(this.K) + 1/7
+		func = lambda x: f_x(this, x, rd, d)
+		gradient_precision(alpha0, 100, 0.001, 0.1, func, lambda x: f_x_derivative(this, x, rd, d))
 
 	def Maximization(this):
 		# Calculate Mu, Omega
