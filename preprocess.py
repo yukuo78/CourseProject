@@ -103,6 +103,7 @@ def preprocess():
 	print("	total terms:", len(vocab))
 
 	#print(len(total_reviews), total_reviews[2])
+	return vocab, vocab_dict
 
 if __name__ == '__main__':
 	preprocess()
